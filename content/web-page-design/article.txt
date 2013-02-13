@@ -1,0 +1,40 @@
+content:
+# Web Page Design
+
+- visual
+	- create layout in photoshop
+		- title
+		- section links
+		- content area
+		- links, sidebars
+	- decide colour scheme
+	- draw type
+	- draw borders, icons, other page elements
+	- create rollovers
+	- organize photoshop layers for presentation
+	- slice and export web images
+	
+- code
+	- decide content management. in order of complexity:
+		- flat html
+		- php layout/page includes
+		- article publisher
+		- wordpress, other published cms
+	- add .htaccess if necessary
+	- lay out html and css
+		- rough layout for front page
+		- separate content areas from common layout
+	- include web content
+		- blog feed
+		- photo/sound/video
+		- social media
+	- write javascript/jquery enhancements
+	
+- content
+	- structure sections
+	- add page titles and content
+	
+- deployment
+	- create remote folders
+	- set up version control
+	

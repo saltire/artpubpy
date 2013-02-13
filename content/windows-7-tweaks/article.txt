@@ -1,0 +1,76 @@
+title: windows 7 tweaks.
+-
+summary: a number of annoyances in the latest version of windows, and how to get around them.
+-
+content:
+# My own favourite Windows 7 tweaks
+
+## Installing from a USB drive
+
+Yeah, you can do this. Once you copy over the contents of the CD, you have to set the active partition
+on the USB drive. Do this by running `diskpart` from a command line. Then type:
+
+- `list disk` to find the disk number
+- `select disk` *`x`* where `x` is the disk number
+- likewise, `list partition` and `select partition` *`x`* ... probably 1
+- `active`
+
+to select the main partition on the USB drive and make it the active (i.e., bootable) one.
+
+You might also have to go to the USB drive's **\boot** directory and type `bootsect /nt60 x:`,
+where `x` is its drive letter. After this, you should be able to boot into Setup on the USB drive.
+
+## Installing to a secondary hard drive
+
+Just kidding! You can't do this directly. I tried.
+Windows Setup gives you a list of disks and partitions to install to,
+but if you pick a disk that isn't the first disk listed in your BIOS, the install will fail halfway through...
+**after** the first reboot. It also has to be installed to the active partition on that drive.
+(Neat fact: if you want to, say, run `diskpart` while you're in Setup, Shift-F10 will open a command prompt.)
+
+However, if you want to run a dual-boot with Windows on a secondary drive,
+you should be able to switch the Windows drive to the lead drive in BIOS for
+the duration of the install process, and then afterward switch back so the other one boots by default.
+Then of course you'd get to the Windows drive via the bootloader on your other drive, or whatever.
+
+## Changing the login background
+
+God, that default background on the login/logout screen is ugly. And of course there's no dialog to change it.
+Here's how you do it.
+
+Take a JPEG file of your own image and save it to
+**C:\Windows\System32\oobe\info\backgrounds**.
+Rename it **backgroundDefault.jpg** and it will resize to your resolution.
+Or you can drop images in more than one size and rename them **background1600x1200.jpg**,
+**background1920x1080.jpg**, etc. to have specific versions for a specific resolutions and/or aspect ratios.
+
+Catch #1: The image has to be under 256k in size or Windows will ignore it.
+
+Catch #2: You either have to make a change to Group Policy or tweak a registry setting.
+
+- Method A: If you have a version of Windows that includes the Local Group Policy Editor
+(that'd be Business, Enterprise or Ultimate), run *gpedit.msc*,
+go to **Computer Configuration > Administrative Templates > System > Logon** and enable
+**Always use custom logon background**.
+- Method B: Fire up *regedit*, go to
+**HKLM\Software\Microsoft\Windows\CurrentVersion\Authentication\LogonUI\Background**
+and set **OEMBackground** to 1.
+
+## Actually get rid of huge Windows apps
+
+I don't explore the internet with Internet Explorer, nor do I use Windows Media Player to play
+my media. Still, I thought I was stuck staring at their useless icons as long as I was running Windows.
+Nope. Go to *Control Panel* > *Programs and Features*, which is the place to go for uninstalling stuff.
+You can't exactly remove IE and WMP like you would other programs, but if you click the link on the sidebar
+that says *Turn Windows features on or off*, you can deactivate these and several other features
+that you may or may not ever use. (Maybe you weren't sick of Minesweeper by 1993, but I was.)
+Likewise, there are also some useful features you can activate there that aren't turned on by default.
+For example...
+
+## Seeing Linux network shares
+
+Finally, I figured this one out. I could see Windows shares from Linux, but not vice versa.
+The solution is part of the above-mentioned *Windows Features* menu.
+The thing we're looking for is *Services for NFS*, and specifically *Client for NFS*.
+Enable that and finally Windows can see Samba shares on boxes running Linux.
+

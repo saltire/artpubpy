@@ -1,0 +1,149 @@
+title: learning version control with git
+-
+content:
+# Learning version control with Git
+
+So I've been coding as a hobby for most of my life, a little here and there.
+Everything I know is self-taught, so while I may know to do a bunch of things,
+I don't necessarily know how to do them *right*.
+I've been aware for a long time that real coders don't just haphazardly
+overwrite their own code every time they change something; they use a process
+known as *version control*, which allows them to see the history of changes
+that have been made to the codebase by all the people contributing, and it lets
+them roll back those changes if need be.
+
+But it all sounded too complicated every time I tried to figure it out, plus,
+since I haven't done a lot of collaborative coding, I haven't had any need to
+keep track of the changes made by different people. 
+Not only that, but there are a few different approaches to version control,
+with the usual software-nerd holy wars in between them. (See a somewhat entertaining
+[talk](http://www.youtube.com/watch?v=4XpnKHJAok8) by Linus Torvalds on why
+his eponymous system, Git, is better because it's everything the evil CVS is not.)
+Like, why bother sticking my hand into that hornet's nest, right?
+
+However, in search of that satisfying feeling one gets when one finally
+groks a new concept enough to work it into the routine and reap the benefits,
+I finally decided to take the plunge.
+
+I decided to follow Linus' banner in the crusades and go with Git.
+It's based on a distributed model of version control, where code is decentralized
+among contributors' individual repositories, and sent back and forth between
+them as necessary. This is distinct from the older,
+centralized model where there is one master repository from which
+(to simplify vastly) contributors check out files, modify them and check them back in.
+ 
+Probably a big help in getting the ball rolling for me was the emergence of
+[GitHub](http://www.github.com), which is a sort of social network for coding.
+It basically offers cloud-based remote hosting for your code,
+but takes that distributed paradigm even further, encouraging users to share
+their code publicly, so it can be forked by other users and worked on in more of
+a public, community context. It also happens to have a very slick interface and
+some very helpful step-by-steps on getting Git running. So it was a bit of a no-brainer.
+
+Anyway, here's what the learning process has been like for me.
+
+
+## Installing
+
+First things first, gotta set up Git. Pretty straightforward on any platform:
+either download it or get it from the package manager.
+
+There are just a couple things you have to do to set up.
+This is done from the bash prompt. (If you're using Windows, Git provides its own,
+called Git Bash. Run it and you'll get a shell prompt. Very nice.)
+
+Any changes you commit to the repo will need your signature, so you can be blamed later.
+(No, really, that's the term.) Add your name and email like this:
+
+`git config --global user.name "`*`your name`*`"`  
+`git config --global user.email "`*`your email`*`"`
+
+If you leave out the `--global` part, the changes will be made just for the current repo.
+
+
+## SSH
+
+Since you'll probably be using SSH for authentication, you'll also need SSH keys,
+public and private. You might have an existing pair in your **~/.ssh** folder;
+if not, we can generate new ones by running `ssh-keygen -t rsa`.
+(You can probably leave off the `-t rsa`, as RSA should be the default type for ssh v2.
+Also, if you want, you can enter a comment with `-C` *`comment`*.)
+Save the key pair in your **.ssh** directory.
+Then enter a passphrase, and don't forget it.
+
+Now you have to give your public key to the server, so that it can ask for your
+private key's passphrase when you want to push code to it.
+If you're using GitHub, there's a spot in your user settings where you can add
+your public key. That would be the contents of the newly created
+**~/.ssh/rsa_id.pub** file.
+
+If you're using some other server, the public key would go into the server's
+**~/.ssh/authorized_keys** file. If there isn't an existing file on the server already,
+you can create a new one using scp:
+
+`scp ~/.ssh/rsa_id.pub` *`user`*`@`*`remotehost`*`:~/.ssh/authorized_keys`
+
+If there is, you will just have to append the key to the end of the remote file:
+
+`cat ~/.ssh/rsa_id.pub | ssh` *`user`*`@`*`remotehost`* `"cat >> ~/.ssh/authorized_keys"`
+
+
+## Setting up a repo
+
+You've gotta have a repository for your code. A repository is basically a database
+that stores all the files, and changes thereto, that you've committed to it.
+With Git, it takes the form of a **.git** directory within your project dir.
+
+Create a new one from the prompt by going to the project folder, and typing
+`git init`. That will create the **.git** directory. And that's pretty much it.
+You can of course do this on a remote server as well, if you have ssh access.
+
+Note: if you're setting up a remote repo just for storage, you might not need
+working copies of the files on it, just the deltas and the commit history and
+stuff that gets pushed from wherever the actual coding takes place.
+In that case, use `git init --bare`, which will just initialize the directory
+with the stuff that would otherwise go into a **.git** directory alongside copies
+of all the actual project files.
+
+
+## Committing
+
+If, however, you're setting up a working repo, you'll want to put some files in it.
+To begin with, the repo isn't tracking any files, even if files already existed
+in the directory where you initialized it. To add them, just do `git add`
+followed by a filename, or a subdirectory, or a wildcard.
+
+To commit the initial version of the project into the repo, type `git commit
+-m` *`"Initial commit message"`*. Each commit gets a message to go along with it,
+to log the changes being made to the codebase.
+
+
+## Pushing and pulling
+
+Odds are you'll want to get your code from one repo to another.
+If you've got code on a remote server and you want to create a fresh new copy
+of the repo locally, you can clone it like so:
+
+`git clone` *`user`*`@`*`remotehost`*`:`*`path/to/repository`*
+
+and it will copy the whole repo (that is, the files in it and their entire history)
+into a sub of your current directory.
+Or you can add a local path on the end for it to go into.
+
+If your local repo is already set up and you want to designate a remote repo to push to,
+do this:
+
+`git remote add` *`remotename`* *`user`*`@`*`remotehost`*`:`*`/path/to/repository`*
+
+where *`remotename`* is a local name for the remote repo. Though Git is technically
+decentralized, often there is a main central repo that the code is pulled from.
+The conventional name for this remote is `origin`. If you clone a repo, the remote
+from which you cloned it gets added as `origin` by default.
+
+If you want to push the current state of your repo to the remote repo, do this:
+
+`git push origin master`
+
+where `origin` is the remote, and `master` is the branch of the repo you're pushing. 
+
+

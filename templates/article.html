@@ -1,0 +1,23 @@
+<html>
+	<head>
+		<title>{{ title }}</title>
+		<link rel="stylesheet" href="static/style.css" />
+		<link rel="stylesheet" href="static/articles.css" />
+		{% if summary %}<meta name="description" content="{{ summary }}" />{% endif %}
+		{% if tags %}<meta name="keywords" content="{{ tags }}" />{% endif %}
+		{% include "elements/ga.html" %}
+	</head>
+	<body class="pic">
+		<div id="top">
+			<div class="backg"></div>
+			<a class="leftlink" href="/articles">articles</a>
+			<a class="rightlink" href="/"><img src="/saltiresable-small.png" alt="saltire sable." /></a>
+		</div>
+		{% if content %}
+		<div class="textbox">
+			<div class="backg"></div>
+			{{ content|safe }}
+		</div>
+		{% endif %}
+	</body>
+</html>

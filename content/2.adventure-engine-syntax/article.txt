@@ -1,0 +1,169 @@
+title: adventure engine: syntax
+-
+summary: how to write your own games for the adventure engine, using its xml-based format.
+-
+tags: manual, guide, adventure, game, programming, xml
+-
+content:
+# The Adventure Engine: Syntax
+
+Here's a brief rundown of the syntax for an [Adventure Engine](http://www.saltiresable.com/articles/adventure-engine) XML game file.
+This guide is not yet complete.
+
+The following sections are supported:
+
+## Basic information: `<info>`
+
+Some basic information about the adventure, which you can pull from the engine.
+So far you can specify `<title>` and `<author>`.
+
+## Rooms/locations: `<rooms>`
+
+Each location, or room, is defined by a `<room>` tag. A room can have the following attributes:
+
+- `id`: A short identifier for the room. This is how you reference it elsewhere in the XML file,
+such as in conditional statements or when linking it to other rooms or nouns. Required.
+- `start`: One, and only one, room must contain the attribute `start='1'`. This is the location that
+the player is in at the beginning of the game.
+
+In addition, you can define any of the following child tags:
+
+- `<desc>`: A description of the room, to be displayed when the player enters the room,
+or issues a 'look around' type of command. Can be as short or as long as you want.
+If there is no description, the name of the room will be displayed instead.
+- `<note>` (empty): An optional addendum to the description of the room. A `note` tag has just a single `id` attribute
+with the ID of a message (see `<messages>`, below).
+- `<exit>` (empty): Direct exits from the room. Each exit must have:
+	- A `dir` attribute specifying a direction, such as `north`, `southeast`, `up`, `exit`, or any word that you have defined.
+	- A `room` attribute. Specifies the room the player will end up in if they travel in that direction.
+
+	There can be any number of exits from a room, but each one must have a unique direction.
+
+## Nouns: `<nouns>`
+
+An object in the game with which the player can interact. Each `<noun>` tag can have the following attributes:
+
+- `id`: An identifier for the noun, just like a room has. Required.
+- `visible`: If this is set to `1`, the object will be mentioned whenever the engine displays the description of the room it's in.
+- `movable`: If this is set to `1`, the object can be picked up and added to the player's inventory.
+- `wearable`: If this is set to `1`, the player can put it on like clothing.
+
+And the following child tags:
+
+- `<words>`: A comma-separated list of words that the player can use to refer to the noun. Generally a list of synonyms.
+- `<name>`: A short description of the object, to be used in lists of objects in the current room or in the player's inventory.
+Depending on the style of your adventure, it could look something like: `a silver key` or `A big, shiny, red button!`
+- `<shortname>`: An optional shorter noun, such as `cloak` or `treasure map`.
+- `<shortdesc>`: An optional short description which you may decide to use when listing nouns in the current room.
+Example: `You see a big lever sticking out of the floor.` or `A slavering werewolf eyes you hungrily.` That kind of thing.
+- `<desc>`: A description of the noun, to be used when the player examines the object.
+- `<loc>` (empty): If you want the noun to start out in a particular room, add a `loc` tag with the `id` as the ID of the room.
+By the way, nouns can exist in more than one room at a time. If this is the case, you can add multiple `loc` tags.
+
+## Vocabulary: `<words>`
+
+The parser has a vocabulary of words that can be used in commands; in order for the parser to recognize a word, it must
+be in the vocabulary. Each word in the vocabulary is defined by a list of synonyms.
+These lists of synonyms appear either in the `<words>` section, or within a `<noun>` definition, as described above.
+The `<words>` section is simple, and has only one type of child tag:
+
+- `<word>`: a comma-separated list of interchangeable synonyms for a word.
+
+All words that you want to use in commands must be defined; this list can include verbs, adjectives, prepositions, directions,
+and any noun that isn't formally defined as a `<noun>` object.
+
+## Variables: `<vars>`
+
+You can define any number of integer variables to use in the logic of the game. Can be used for flags, counters, whatever.
+One tag type:
+
+- `<var>` (empty): The variable. Any empty tag with two attributes:
+	- `id`: A unique name for the variable.
+	- `value`: Its initial value. Can be any integer.
+
+## Conditional blocks: `<cond>`
+
+Ah, the real meat of the game. All the logic for each turn is stored in a set of conditional blocks,
+which function as if/then statements.
+These consist of a `<cond>` tag, which in turn can have the following child tags:
+
+- One or more *conditions*.
+- One or more *actions*, and/or *special tags*.
+- Further nested `<cond>` blocks.
+
+Let's look at each of these in more detail.
+
+### Conditions
+
+A conditional block must contain one or more *conditions*, in the form of `<if>` tags.
+An `<if>` tag consists of a comma-separated list of *tests*.
+The engine defines a number of tests that you can use to check the current state of the game,
+each of which evaluates to either **true** or **false**.
+Each test has a name, and usually one or more parameters.
+For example, `room` checks to see if the player is currently in a certain room.
+`room hallway` will answer **true** if the player is currently in the room named `hallway`.
+
+If **all** of the tests in an `<if>` tag evaluate to **true**, then the condition evaluates to **true**.
+If **any** condition present in the `<cond>` block evaluates to **true**,
+then the engine will begin executing the actions in that block.
+Otherwise, the engine will skip to the end of the block (`</cond>`) and continue from there.
+
+A conditional block with no conditions will not execute.
+
+### Actions
+
+The engine defines a number of actions that you can tell it to take, should one of the conditions be met.
+Actions are the engine's way of changing the state of the game. Actions are usually defined using an `<action>` tag.
+Like tests, actions consist of a name and possibly some parameters.
+For example, `setvar light 1` will assign a value of `1` to the variable named `light`.
+
+### Special tags
+
+There are also a couple of meta-actions that aren't specified with the `<action>` tag:
+
+- `<done />` (empty): This ends the evaluation of all `<cond>` blocks in the current `<condset>` (see below).
+  The engine will skip any further if/then conditions in that section of the XML file.
+- `<gameover /> (empty)`: Ends the game, displaying a game over message.
+- `<replace>`: Replaces the user's input with the content of this tag.
+  The engine will start over from the first conditional block and start re-evaluating them all
+  with the new input. In this way, you can tell the engine to treat certain commands as synonymous.
+
+### Nested conditional blocks
+
+The engine supports nesting: `<cond>` blocks can contain further `<cond>` blocks, etc.
+This way you can have branching if/then statements that go as deeply as you need them to.
+
+### Conditional sets: `<condset>`
+
+In addition, conditional blocks can optionally be grouped into sets,
+which are evaluated in the order that they appear in the XML file.
+This way you can effectively break the turn into a series of stages,
+which can be useful if you have separate processes that need to be run on each turn, independently of each other.
+For example, you might have a `<condset>` that deals with the player's immediate actions,
+followed by a second `<condset>` that causes something to happen at the end of the turn if a certain condition is met,
+regardless of the player's input that turn.
+
+## Wildcards
+
+
+
+Tests and actions often depend directly on the user's input.
+As such, the engine provides *wildcards* that enable certain words in the player's commands
+to be passed directly as parameters to tests and actions.
+These are written as a percent sign (`%`) followed by a number that represents the position of the word in the command.
+
+For instance, the `present` test judges whether an item is present in the current room or in the player's inventory.
+If you want to test this after the player says `examine [item]`, then run the test:
+
+`<if>input examine *,present %2</if>
+
+So if the player writes `examine key`, the engine will substitute `%2` with the second word in the command,
+and run the test `present key` to see if the key is present in the room.
+
+This also works for actions, as well as replacements. For example, if you want your game to treat the commands
+`wear [item]` and `put on [item]` the same, you can add the following:
+
+    <cond>
+        <if>input put on *</if>
+        <replace>wear %3</replace>
+    </cond>

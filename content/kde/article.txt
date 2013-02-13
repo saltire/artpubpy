@@ -1,0 +1,62 @@
+title: kde config.
+-
+summary: my checklist for bending the k desktop environment to my own personal whims.
+-
+content:
+# How I configure KDE4.
+
+Title says it all. This is a pretty low-tech article. In fact, it's basically just a personal checklist.
+But here are the many little mundane things I like to set up whenever I have a fresh install of KDE4.
+Names in *red* are Arch Linux packages to install.
+
+- When running GUI apps from the command line that need root privileges, remember to type `kdesu` instead of `sudo`.
+- Speaking of which, kdesu will by default ask for the root user's password rather than your own,
+i.e. like running `su` instead of `sudo`. To give sudo-like behaviour to kdesu, run this command as your normal user:
+`kwriteconfig --file kdesurc --group super-user-command --key super-user-command sudo`
+    - I'm currently getting a bug with this, where if I enter an incorrect password, the kdesu window freezes.
+    Not sure what the problem is.
+	- Another thing: for some reason this will use root's KDE system settings instead of yours;
+	all your display settings will be reset to ugly defaults. You'd think it'd be the other way around with sudo.
+
+## Desktop:
+
+- *kde-meta-kdeplasma-addons*, add widgets by clicking the cashew on the panel.
+
+## System settings:
+
+- **Workspace Appearance** and **Application Appearance** to set Oxygen theme, colours, fonts, etc.
+- **Desktop Effects** if the computer's a feisty one.
+- **Window Behaviour** for window raising and switching settings.
+- Native style for GTK apps: *gtk-qt-engine*, aur+*oxygen-molecule-theme*.
+Then select it in **GTK Styles and Fonts**.
+(I actually have my own custom version of the oxygen-molecule theme)
+- disable notification sounds, nepomuk, etc
+- keyboard: turn numlock on at startup
+- file associations
+- set regional info, enable keyboard layout & set compose key
+- Change login theme: **Login Screen > Theme**. I like the themes in *archlinux-themes-kdm*.
+- Multiple desktops: **Workspace behavior**.
+You can set certain applications to come up automatically on certain desktops,
+so you can keep them organized without having to move them around every time you launch them.
+Right-click the title bar of the program and select **Advanced** > **Special Application Settings...**,
+then under the **Geometry** tab, check **Desktop** and select **Force** and the desktop on which
+you want the application to appear.
+
+## Dolphin:
+
+- Context menus. In the **Settings** > **Configure Dolphin** dialog, go to **Services**
+and check the things you want to appear in the right-click menu.
+    - BTW, these services are stored in **/usr/share/kde4/services/ServiceMenus/**.
+    The **.desktop** files within are pretty simple to edit. As an example,
+    I found this useful when I wanted to add a right-click option to have Ark compress files to a 7-Zip archive.
+- I like me my split screen, so I
+
+## Some KDE apps I have installed:
+
+- *kdegraphics-gwenview*, *kdegraphics-okular*, *kdesdk-kate*, *kdeutils-kcalc*, *ktorrent*
+- *kdeutils-ark* ... actually I ended up installing the whole utils metapackage: *kde-meta-kdeutils*.
+- *k3b*, *dvd+rw-tools*
+- *amarok*, *phonon-xine*
+	- If scanning your collection hangs, run `amarokcollectionscanner` from the console.
+    If it's a particular file causing the problem, the scanner will freeze right before displaying the offending file.
+    - aur:*moodbar* exists, but IMHO, this nice feature isn't really in a usable state yet in Amarok 2.

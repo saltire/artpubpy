@@ -1,0 +1,129 @@
+title: diablo II on linux.
+-
+summary: a guide to getting the click-things-till-they-die game running on linux, which really isn't that hard.
+-
+tags: diablo, diablo ii, diablo 2, games, gaming, linux, wine, install, guide, howto
+-
+content:
+# Installing Diablo II on Linux
+
+Isn't it great when a game just works in Linux? Guess what, Diablo II is one of those
+privileged few. Which is good, because it makes for great LAN parties and still
+retains its awesome gameplay after well over 10 years.
+So if you have a PC running Linux on your network, fear not: here's how to install it.
+It's actually refreshingly painless.
+
+## Setting up Wine
+
+First, install and set up Wine, a Windows-like environment for running Windows programs
+within Linux. If don't have it already, it will most likely be available as a package from your distro.
+For example, on Ubuntu you'd type `apt-get install wine`. On Arch, `pacman -S wine`. Et cetera.
+To set up Wine once it's installed, run `winecfg`.
+
+Wine keeps a virtual C: drive, which by default is at `~/.wine/drive_c`.
+You can create other drives and link them (as well as Windows folders like My Documents)
+to places in your Linux filesystem. For our purposes, all we have to do is add a CD drive.
+To do this, go to winecfg's *Drives* tab, click *Add...* and select a drive letter.
+Then, with that drive selected, enter in the *Path* field the point in your filesystem that Wine should treat as that drive.
+Personally, I have my install CDs backed up as ISO disc images, which I mount as follows:
+`mount -o loop /path/to/disc_image.iso /media/iso`.
+So I'll add a virtual D: drive in Wine with the image mount point (which in my case is `/media/iso`) as the path.
+If you're using physical CDs, then do the same thing, but use `/media/cd` or whatever your CD mount point is.
+(Check `/etc/fstab` if you're not sure.)
+Oh, I almost forgot, there's an *Autodetect...* button on the Drives tab that will try to do all of that automatically.
+You should probably just click that.
+
+You'll also want to set up sound, which is a matter of going to the *Audio* tab and selecting a driver
+(ALSA or OSS, depending on what you have installed). You might have to trial-and-error this a bit;
+ALSA works for me on Arch but I seem to remember having to pick OSS in the past.
+I also remember having to change *Hardware Acceleration* to *Emulation* as well,
+so if you still have problems, try that.
+
+What else? Some window managers in Linux have the option to grab and move windows by alt-clicking them.
+If you end up running the game in a window, and you have such an option set in your WM,
+it might conflict with using the alt key to highlight and pick up items in Diablo.
+The solution is to go to the *Graphics* tab in `winecfg` and uncheck
+*Allow the window manager to control the windows*.
+(Of course, if you do this, don't expect it to behave exactly the same as your other windows;
+e.g., if you minimize the game, it won't appear on your taskbar,
+but will become a small icon on your desktop instead).
+If the conflict still happens after that (and it has on occasion for me), you'll have to reassign the key in your WM.
+
+## Existing install
+
+If you already have Diablo II on an existing Windows partition, I've found you can run it through Wine
+pretty easily. You'll have to set your preferences again though, as they won't be in your Wine registry yet.
+(This ought to work the other way around, too, if you want to copy a Wine installation onto a Windows system.)
+You can then skip the next section. Otherwise, read on...
+
+## Installing through Wine
+
+So now you can insert your Diablo II install CD or mount your image thereof, navigate to the mount point, and run
+`wine setup.exe`. Hit install, enter your CD key, and it should start installing.
+Switch discs when prompted, or if you're using disc images, unmount the current one
+(i.e. `umount /media/iso`) and mount the next one.
+Afterwards, if you want to install the Lord of Destruction expansion
+(and why wouldn't you?), mount that disc and repeat.
+
+Then it's time to patch the game. Download the latest patch if you haven't already,
+navigate to its directory, and run it with Wine: `wine D2Patch_113c.exe`
+(or `wine LODPatch_113c.exe` if you installed the expansion).
+After that, you have the option of copying over a couple more files manually
+so that you don't have to insert the CD or mount the image whenever you want to play.
+Insert or mount the game disc and copy `d2music.mpq` to your game directory
+(e.g. `~/.wine/drive_c/Program\ Files/Diablo\ II`, or wherever you chose to install it).
+If you installed the expansion, insert or mount that disc and copy `d2xmusic.mpq` and `d2xvideo.mpq` as well.
+
+## Setting up the video driver
+
+Last, you should switch to your game directory and run `wine D2VidTst.exe`.
+The game will detect compatible video modes and give you a choice of which one to use.
+These days, Direct3D seems to work on my computer without any hassle.
+However, I seem to remember having trouble with it in the past, so if that's the case,
+Direct2D might give you more luck. You'll lose features like the 3D perspective view this way, though.
+
+As a third option, you could try this [Glide wrapper](http://www.svenswrapper.de/english/downloads.html),
+which emulates an old-school 3dfx Voodoo card. Download it, open the archive
+and drop `glide3x.dll` into your game directory, run `wine D2VidTst.exe` again and choose 3dfx Glide.
+
+I've found that sometimes running fullscreen doesn't seem to work very well off the bat,
+especially on widescreen monitors. The bottom of the screen might be cut off,
+or the image might be stretched out horizontally.
+If you're using the Glide wrapper as mentioned above, a solution exists.
+From the same archive that `glide3x.dll` came from, extract `glide-init.exe`
+into the game directory and run it with Wine.
+This brings up a configuration window; hit the *settings* button and check *desktopresolution*.
+Try it again and hopefully it'll be at the right aspect ratio, fit to the centre of the screen.
+By the way, this fix also works in Windows.
+
+If running fullscreen doesn't work at all, or it's unbearably slow,
+you can always run the game in windowed mode (see below).
+
+## Fine tuning
+
+That's it. You can play now. Almost.
+
+To play, switch to your Diablo game directory and run `wine Diablo\ II.exe`
+(or make a short shell script to do this, from a more convenient location).
+You might have to smooth out a couple more things, though...
+
+If you want to run the game in a window, add `-w` to the end of that command.
+
+If it runs slowly and you want to save some CPU cycles, try prepending `WINEDEBUG=-all`
+to the beginning of the command. This will disable debugging messages that normally get logged to stdout.
+
+In some situations, the mouse cursor will still appear over top of the game after you run it.
+This happened to me when I was running Ubuntu, and it's highly annoying.
+An acceptable workaround I found is to install Unclutter,
+a small program that removes the cursor after a period of not moving it.
+Install it (`apt-get install unclutter`) and run `unclutter -idle 1 &` before running Diablo.
+`-idle 1` sets it to remove the cursor after 1 second, and `&` runs it in the background.
+If you're using a shell script to run Diablo, just put this at the beginning.
+
+If you want to play over a network, make sure you have a proper setting for your own computer
+in your /etc/hosts file, such as `127.0.0.1 localhost`, or `[192.168.x.x] [hostname]`,
+where the first is your local IP address and the second is your computer's hostname.
+
+## Commence killing things
+
+Have fun clicking on monsters until they die. See you when Diablo III comes out.

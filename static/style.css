@@ -1,0 +1,58 @@
+/* generics */
+
+a { color: #fff; text-decoration: none; }
+a:hover { background: #b3b3a1; outline: 1px dotted #fff; }
+a:focus { background: #ccccb8; outline: 1px dotted #fff; }
+
+h1 { margin-bottom: 0; font-size: 80px; letter-spacing: -.06em; }
+h2 { margin-top: 0; font-size: 30px; letter-spacing: -.06em; }
+
+.center { text-align: center; }
+
+
+/* body & top bar */
+
+body { width: 100%; min-height: 100%; margin: 0 auto; color: #fff;
+       font-family: "helvetica neue", helvetica, freesans, "nimbus sans", arial, sans-serif; }
+body.pic { max-width: 1600px; background: #F4F4DA url('http://farm4.static.flickr.com/3494/4030321825_e544aeb41d_o.jpg') top center no-repeat fixed; }
+body.pic #top { border-bottom: 1px dotted #f1f1da; }
+
+body.white { background: #fff; }
+body.white #top { background: #000; }
+
+#top { height: 30px; font-size: 20px; font-weight: bold; letter-spacing: -.04em; line-height: 30px; position: relative; }
+#top a.leftlink { margin: 0 12px; padding: 0 10px; float: left; }
+#top a.rightlink { margin: 0 12px; padding: 0 10px; float: right; }
+#top a.rightlink img { display: block; }
+#top p.leftnote { margin: 0; color: #000; font-size: 10px; letter-spacing: normal; line-height: 20px; position: absolute; left: 22px; top: 30px; }
+#top p.rightnote { margin: 0; color: #000; font-size: 10px; letter-spacing: normal; line-height: 20px; position: absolute; right: 22px; top: 30px; }
+#top p.leftnote a,
+#top p.rightnote a { color: #000; }
+
+/* front page */
+
+#front { width: 1024px; margin: 0 auto; color: #fff; font-size: 20px; font-weight: bold;
+		 letter-spacing: -.06em; position: relative; }
+#front a { padding: 0 15px; display: inline-block; }
+
+#front #title { position: absolute; top: 450px; left: -80px; }
+#front #menu { text-align: right; line-height: 35px; position: absolute; top: 30px; right: 40px; }
+#front #menu ul { width: 300px; margin: 0; padding: 0; list-style: none; vertical-align: top; display: inline-block; }
+#front #menu ul li { text-align: right; }
+#front #colophon { margin: 0; padding: 0; font-size: 16px; line-height: 30px; list-style: none;
+                   position: absolute; top: 650px; left: 60px; }
+#front #colophon li a { margin-left: -15px; }
+
+
+/* box w/ semi-transparent background */
+
+.backg { height: 100%; width: 100%; background: #333330; opacity: 0.35; position: absolute; top: 0; left: 0; z-index: -1; }
+
+
+/* other boxes */
+
+.menubox { width: 400px; margin: 15px auto; padding: 20px; border: 1px dotted #f1f1da; position: relative; }
+.menubox a { padding: 5px 10px 10px; text-align: center; display: block; }
+.menubox a .atitle { margin: 0; font-size: 30px; letter-spacing: -.06em; display: block; }
+
+

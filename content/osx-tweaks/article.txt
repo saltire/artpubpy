@@ -1,0 +1,12 @@
+title: Mac OS X Tweaks
+-
+content:
+Gonna write an OS X guide, just like Windows and Linux.
+
+Mostly terminal and command-line stuff. Also a few useful shortcuts, maybe.
+
+Here's one that sets the font smoothing level. A lower number means lighter,
+higher means heavier. I found the default in 10.6 to be too heavy, so I set it
+to 1. This is the default:
+
+`defaults -currentHost write -globalDomain AppleFontSmoothing -int 2`

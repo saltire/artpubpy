@@ -1,0 +1,96 @@
+title: the adventure engine.
+-
+summary: an introduction to a web-based text adventure system written in php.
+-
+tags: adventure, game, rpg, text, c64, commodore, gaming, computer
+-
+content:
+# The Adventure Engine
+
+## The age of text adventuring
+
+I may be dating myself here, but when I was growing up my first computer
+was a *Commodore 64*. It hooked up to the TV, and I had racks of tapes and floppy disks filled
+with, among other things, a lot of games that I would play with a joystick in 16 glorious colours.
+
+Well, not all of them. Some of the games I'd play with the keyboard, with really no graphics at all
+save the Commie's distinctive bitmapped font. The computer would simply describe to me where I was and what
+was happening, and I'd tell it where to go and what to do next. And it would either
+do it, or (more often) give me a smart-assed response instead.
+
+These were text adventures, and despite their lack of sound and action, they were among the most
+memorable games of the era. As has always been my wont, I even found ways to create my own
+text adventure games, which I found to be a fun new creative outlet.
+
+Of course, as computer graphics continued to get better, and console systems took over,
+text adventures basically faded into obscurity... if they were even that popular to begin with.
+But the web has brought us a whole new interaction with text, and I saw it as a powerful and
+easy way to bring text adventuring back to life.
+
+## Adventuring on the Web
+
+So I created [a web-based engine for text adventure games](http://www.saltiresable.com/adventure),
+and you can play it right now.
+
+My goals were **to recreate the experience of the old-school text adventure as faithfully as possible**,
+and **to create a flexible platform for which anyone could write their own games**. Because really,
+just playing them is only half the fun.
+
+Back in the C64 days, I was aware of a program called *The Quill*, which was used to create many of
+the text adventures that I played. I never did get my hands on a copy, but when I got a PC I ended up using
+a program called *Adventure Game Toolkit*. It basically laid out games as a series of locations
+the player could visit and objects he or she could interact with, as well as some internal flags and variables.
+You could also define commands that the parser could take, and custom messages it would give as output.
+
+I figured all of those things, and the logic that binds them, could probably be defined in
+a single *XML* file. I searched the Web to see if this had been done before,
+and found [this project](http://blog.lotusnotes.be/domino/archive/2007-05-27-xml-text-adventure.html),
+which did pretty much that. My implementation took some inspiration from this approach, as well as from AGT's.
+
+Mr. Van der Mieren's text adventure is written entirely in *Javascript*, the advantage of which is that the game runs directly
+in your browser, with no further interaction from the server necessary. The coding can thus be quite simple
+and elegant. The downside (depending on how you look at it) is that the XML file, which contains
+the entire game, is also stored in the browser. While I'm all for open source software, we're talking about
+a puzzle game here. I don't know about you, but if reading the answer to the puzzle
+I'm trying to solve was as easy as hitting "View Source" in my browser, it'd take a lot of effort for
+me **not** to click it every time I got a little stuck. Remember, I'm trying to recreate these games
+as faithfully as possible. Tearing your hair out in frustration is all part of the experience.
+So I decided to figure out how to run the game from the server side.
+
+## Let's get technical
+
+So I wrote the Adventure Engine in *PHP*. This presented a different challenge: sending
+messages back and forth over HTTP, which is stateless, for a type of game which requires you to keep track
+of its current state. Hence, the app consists of a few parts:
+
+- The extensible engine which parses input in the form of a command from the player,
+and executes each turn of the game.
+- An object which contains data for the game itself, which it reads from an XML file.
+- A object that keeps track of the state of the game for the current player.
+
+The state object currently uses cookies and PHP sessions to remember the state of the game
+(the current room, the location of each noun, the number of turns, etc),
+so you can leave the page and come back and it'll pick up where you left off. It could also just as easily do this
+with a login system and a database; I just haven't gone that far yet.
+
+The XML file consists of lists of the following:
+
+- **Locations**. Actually, I should have called them locations, but I called them **rooms** instead.
+- **Nouns**. These are objects that exist in the game world, that you can pick up and otherwise interact with.
+- **Variables**. Internal variables that store an integer. You can use them to keep track of whatever you like.
+- **Conditions**. These contain the logic of the game. These are generally if/then statements that consist of
+**tests** and **actions**. They can also be recursive, i.e. your actions can contain further conditions.
+- **Messages**. Pretty much all the output is also defined in the XML file.
+
+All the tests and actions exist as methods within the engine object. It's currently got a couple dozen
+of each, but it's possible to extend the engine to include more, which you can then reference in the
+game's XML file.
+
+I also used a bit of Javascript for the front end of the game, but only to fetch responses via *AJAX*
+instead of reloading the page.
+
+For my first game written with the engine, I decided to port over one of my favourite games from the C64:
+*Starflight: A Cosmic Adventure*, written by Chris Lampton. This game was actually written in pure BASIC,
+but I tried to convert it as faithfully as possible, and I think I succeeded. It's still just as creepy as
+when I first played it some, oh hell, almost 20 years ago. [Check it out.](http://www.saltiresable.com/adventure)
+

@@ -1,0 +1,185 @@
+title: arch linux installation, 2012.
+-
+summary: in which the author overwrites his already outdated installation guide.
+-
+tags: arch linux, arch, linux, install, installation, guide, howto
+-
+content:
+# Arch Linux Installation, 2012 edition
+
+When I first installed [Arch Linux](http://archlinux.org) a couple of years ago,
+I kept some notes on the process, which ended up evolving into a bit of an
+[installation guide](../arch-linux-installation). I've been updating it in little
+bits ever since, but recently the folks at Arch have made enough changes that
+a new article is probably warranted.
+
+In addition, I decided to try out a new install with full-disk encryption,
+so this guide will show some steps to doing this as well, along with a few other
+features.
+
+Note: **This article is still in progress!** I'm working on it as I go.
+
+## Installation media
+
+Perhaps the most obvious recent change to Arch Linux is the install process.
+Previously Arch's live CD image included a minimal menu-based installer, but now
+even that is gone, and instead we have an even more bare-bones process done
+entirely on the command line, with the help of a few scripts.
+
+Conveniently, the distro has been reduced to a [single install image](http://www.archlinux.org/download/)
+(rather than a "core" and a "net" install for each of 32-bit and 64-bit),
+so start with that. You'll likely want to copy the ISO to a USB stick; here are
+[some](http://www.pendrivelinux.com) [nice](http://unetbootin.sourceforge.net/)
+[apps](http://www.linuxliveusb.com) that will help you do that.
+
+When the image boots, you will be logged in automatically as root.
+Your network should work out of the box if you're on a wired connection.
+
+## Partitions and volumes
+
+As with all distros, you'll have to set up some partitions before installing.
+This was different for me this time, as I decided to encrypt my partitions with LUKS.
+I also set up logical volume management (LVM) this time, which is a more
+flexible partitioning system that lets you create logical volumes (kind of like
+virtual partitions) on top of a regular physical partition.
+
+### Wipe the drive securely
+
+If you want a system with encrypted partitions, you'll want to securely wipe the
+drive before installing, by overwriting the whole thing with random data.
+This will get rid of any existing data that was on the drive before, or in the
+case of a new drive, it will initialize the drive with random noise so that the
+encrypted data can't be distinguished from the empty areas.
+
+The simplest way to do this is to run `dd if=/dev/urandom of=/dev/sd`*`?`* `bs=1M`
+(using **/dev/sda**, **/dev/sdb** or whatever your drive's device is) to write random
+data to the entire disk. As always, exercise caution using the `dd` command and
+make double sure that you're writing to the right device!
+
+If you want to do this more quickly, you can install *frandom* from the AUR,
+start it with `rc.d start frandom` and use **/dev/frandom** instead of **/dev/urandom**.
+
+### Create partitions
+
+Your partition scheme is entirely a matter of preference. Personally, I use
+a 10GB root, a 100MB **/boot**, a swap double the size of my RAM, and a **/home**
+using whatever space I have free (usually I'm dual-booting with Windows).
+
+A note on LVM and LUKS: if you're going to be using both, you have two options.
+You can create your logical volumes, and then encrypt each one with LUKS (LUKS on LVM).
+Or, you can create one encrypted partition with LUKS, and then create your logical
+volumes on top of that (LVM on LUKS). I did the latter, as it seems the simplest
+and most flexible solution.
+
+- Use a tool like `cfdisk` or `parted` to create physical partitions.
+If you want to use GPT (GUID partition table) instead of MBR (master boot record),
+use `gdisk` instead. It's up to you.
+- If you're using GPT, you need to create a 2MB partition with type 0xEF02
+(BIOS boot partition).
+- If you're going to be using LUKS (or LVM on LUKS), create a separate physical 
+**/boot** partition, which will be unencrypted.
+(You'll also need a separate **/boot** if you're going to be running
+the legacy version of GRUB, as it doesn't recognize LVM. But GRUB2
+supports it just fine, so I suggest using that.)
+- If you're using LVM, create one physical partition for all your LVM volumes,
+and give it type 0x8E (Linux LVM). (In `gdisk`, type `8e00` for the partition type.)
+If you're not using LVM, then create separate partitions for **/**, **/home**,
+and/or whatever else you want to use. If you're using MBR and you want more than
+4 partitions, you'll have to create an extended partition with logical partitions inside it.
+
+### Encrypt partitions
+
+Here's the fun part. If you're running LUKS on the bottom of the stack, start by
+encrypting your LUKS partition(s). If you're going to be running LUKS on LVM,
+then wait until you've created your LVM volumes, then come back here and encrypt
+each of those volumes in turn.
+
+- To encrypt your partition: `cryptsetup -c aes-xts-plain -y -s 512 luksFormat /dev/sd`*`??`*
+(using the partition's device name, e.g. `/dev/sda3`). Enter a passphrase.
+- Now you have to make the encrypted partition available.
+Run `cryptsetup luksOpen /dev/sd`*`?? name`* to create it as **/dev/mapper/*name***.
+From now on, use this device path instead of **/dev/sd*??***.
+
+You'll be asked for your passphrase each time you open your encrypted partition.
+Alternately, you can use a keyfile instead of a passphrase, and there are several
+ways to set that up, but let's stick with the simple phrase for now.
+
+### Set up LVM volumes
+
+- First you have to initialize a partition to be used with LVM (a "physical volume").
+Run `pvcreate /dev/sd`*`??`* for each LVM partition
+(there should only be one per drive).
+- Now create a volume group. Run `vgcreate` *`groupname`* `/dev/sd`*`??`*
+to create the group and add your partition to it. If you have more than one partition
+to add, run `vgextend` *`[groupname]`* `/dev/sd`*`??`* for each subsequent one.
+(Yep, this means you can span your logical volumes across multiple physical drives!)
+- Now create your logical volumes: `lvcreate` *`groupname`* `-L` *`size`* `-n` *`volumename`*.
+The volume can now be accessed at **/dev/mapper/*groupname*-*volumename***
+or **/dev/*groupname*/*volumename***.
+    - You can also use this syntax: `lvcreate -L` *`size groupname`*`/`*`volumename`*
+    - For the size, type `10G` for 10 gigs, `100M` for 100 megs, etc.
+- If you have some existing volumes already but they aren't active (e.g., after
+rebooting), run `vgchange -ay` to make them available.
+- Some other LVM commands:
+    - *`[pv|vg|lv]`*`display` to show existing volumes or groups.
+    - *`[pv|vg|lv]`*`remove` *`path`* to remove volumes or groups.
+
+## Installing and configuring
+
+- Create filesystems on each of your volumes/partitions. For example, using ext4:
+`mkfs.ext4` *`[path]`*, where the path is the volume path provided to you by LUKS or LVM
+(whichever you set up last), or if you're not using either, your device path (**/dev/sd*??***).
+- Mount your root volume on **/mnt** (`mount` *`path`* `/mnt`), then create paths
+for your other volumes (e.g. `mkdir /mnt/boot`), and mount those in turn
+(`mount` *`path`* `/mnt/boot`).
+- Next you'll want to set up your `pacman` mirrorlist, by uncommenting just a few mirrors.
+The default **/etc/pacman.d/mirrorlist** comes with all mirrors enabled.
+What I did was run `sed "s/^Server/#Server/" /etc/pacman.d/mirrorlist > mirrorlist`
+to comment them all out, then edited the resulting **mirrorlist** file to uncomment a few,
+and moved that file back to **/etc/pacman.d/mirrorlist**.
+- Now you can actually install the system, using one of the provided install scripts:
+`pacstrap /mnt base base-devel`
+- You should also install a bootloader. Let's do GRUB2: `pacstrap /mnt grub-bios`
+- Use another script to generate an **fstab** file. This script is handy because
+it handles all your LVM volumes for you: `genfstab -p /mnt >> /mnt/etc/fstab`
+- Now let's make some changes from inside our new filesystem: `arch-chroot /mnt`
+    - Edit **/etc/hostname** - this file should just contain the name of your box.
+    - Edit **/etc/rc.conf**: this file is a lot shorter than it used to be.
+    For now, all we have to do is uncomment and set `USELVM="yes"` if we're using LVM.
+    - Uncomment a locale in **/etc/locale.gen**, and then run `locale-gen`.
+    - Symlink **/etc/localtime** to point to a timezone:
+    `ln -s /usr/share/zoneinfo/`*`zone`*`/`*`subzone`* `/etc/localtime`
+    - Edit **/etc/mkinitcpio.conf**:
+        - For LUKS: add the filesystem of your root volume (e.g. `ext4`) to the `MODULES` array.
+        - Also for LUKS: add `encrypt` before `filesystems` in `HOOKS`.
+        - For LVM: add `lvm2` before `filesystems` in `HOOKS`.
+        - If you're using LUKS on LVM, make sure `lvm2` comes before `encrypt` in the array.
+        For LVM on LUKS do it the other way around.
+    - If you made changes to **mkinitcpio.conf**, regenerate the ramdisk: `mkinitcpio -p linux`
+    - Now install GRUB: `grub-install /dev/sd`*`?`*, naming the device that you'll
+    be booting from. Be sure to reference the root device of the drive (e.g. **/dev/sda**),
+    not a partition or a volume thereon (like **/dev/sda1** or **/dev/mapper/root**).
+        - If you're using LUKS, put this line in **/etc/default/grub**:
+        `GRUB_CMDLINE_LINUX="cryptdevice=/dev/sd`*`??`*`:`*`groupname`*`"`,
+        substituting the device path of the encrypted partition containing your root volume,
+        and the LVM volume group it's in.
+        - Now run `grub-mkconfig -o /boot/grub/grub.cfg` to generate the config file.
+    - Finally, set your root password: `passwd`.
+    - Now you can `exit` the chroot and `umount` your partitions, and `reboot`.
+    
+## Post-install
+
+So hopefully you should be booted into your new Arch installation. First things first,
+let's set up `pacman`. Most of this will be done inside **/etc/pacman.conf**:
+
+- In the options section, you can comment or uncomment a few
+preferences like `TotalDownload`, `UseDeltas` (requires *xdelta*), and `ILoveCandy` :)
+- Add extra repos if you use them, such as the `[multilib]` repo if you're on 64-bit.
+- The most major recent change to `pacman` is the move to signed packages. To enable this,
+uncomment the `SigLevel = Optional TrustedOnly` option. You can set this to `Required`
+instead of `Optional` if you like, or you can set this option on a per-repo basis.
+    - After setting this option, run `pacman-key --init`. You can follow this
+    with `pacman-key --populate archlinux` to import all the official Arch Linux
+    signing keys onto your keyring.
+
+

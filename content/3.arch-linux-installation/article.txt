@@ -1,0 +1,441 @@
+title: arch linux installation.
+-
+summary: in which the author regales in excruciating detail his experience installing a new operating system.
+-
+tags: arch linux, arch, linux, install, installation, guide, howto
+-
+content:
+# Arch Linux Installation
+
+So in August 2010 I installed [Arch Linux](http://www.archlinux.org) on my desktop
+computer and my laptop simultaneously, and kept a log of everything for future reference.
+What follow are my point form notes, fixed up to be slightly closer to conversational
+English and slightly further from the incomprehensible lowercase shorthand in which
+they were initially written. I've since installed it on at least one other computer,
+using this as a guide, and I've added and clarified other parts of the system
+configuration along the way.
+
+<!---
+## Contents
+
+- [A couple of tips](#tips)
+- [The initial install](#install)
+- [Boot loader](#grub)
+- [Setting up the package manager](#pacman)
+- [Some more initial system setup](#more)
+- [Sound](#sound)
+- [Fonts](#fonts)
+- [Network](#network)
+- [Display](#display)
+- [KDE](#kde)
+- [Firefox](#firefox)
+- [Printer](#printer)
+- [Network file sharing](#samba)
+- [Getting a LAMP server running](#lamp)
+- [SSH server](#ssh)
+- [Virtualbox](#virtualbox)
+- [Other packages](#other)
+- [Remote control](#lirc)
+- [To do](#todo)
+--->
+
+
+<a name="tips"></a>
+## A couple of tips
+
+On this page, anything written in red indicates a package to install with **pacman**,
+and orange indicates a file or directory existing in the filesystem. Code to be
+typed in directly appears in green.
+
+There are many references here to the file **/etc/rc.conf**. It's a simple but often-used
+config file that sets some basic settings, and decides what userspace parts of
+the system such as kernel modules, daemons, network interfaces, etc. are loaded at boot time.
+Generally it's a matter of adding or removing a name from one of the arrays in this file,
+and the change will take effect on the next restart. If you want to set these things right away,
+though, here are some commands you can run:
+
+- To start or stop a daemon: `/etc/rc.d/`*`daemon`* `start` (or `stop` or `restart`).
+Files in **/etc/rc.d** are just bash scripts.
+- To add a kernel module: `modprobe` *`module`*. `modprobe -r` *`module`* to remove it.
+
+Another thing: if you add an `@` before a daemon name in **rc.conf**, it will load
+in the background and won't hold up your boot.
+
+
+<a name="install"></a>
+## The initial install
+
+I'm dual-booting this installation with Windows, but hopefully I won't have to
+log onto the latter partition too often.
+
+I did a net install from a USB key, which I created using **unetbootin**. On the
+first run, the partitioner complained of an apparent GUID partition table (how'd
+that happen? Must have been that time I installed OS X on this drive ages ago),
+so I manually partitioned from the command line with **parted** first.
+
+So, to install: run **/arch/setup** and go through the setup program step by step.
+Pretty basic stuff, assuming you know how to partition your disk without
+catastrophically wiping out all your data, etc.
+
+
+<a name="grub"></a>
+## Boot loader:
+
+The setup program will install *grub* more or less automatically.
+To install *grub2* instead, as I prefer to do, quit setup before it installs
+the bootloader, and run:
+
+- `aif -p partial-configure-network`
+- `mount -o bind /dev /mnt/dev`
+- `chroot /mnt bash` to get into the new filesystem
+- `pacman -Sy grub2`
+
+Alternately, of course, you can just install *grub* during setup and replace it with *grub2*
+after your first boot.
+
+To configure *grub2*:
+
+- configure **/etc/default/grub**:
+	- `GRUB_SAVEDEFAULT=true`, `GRUB_DEFAULT=saved` to get **grub** to remember your last choice
+	- `GRUB_GFXMODE=`*`resolution`* to set the screen resolution
+	(for a list of valid resolutions, hit `c` at the **grub** menu later to get a command prompt, and type `vbeinfo`)
+	- `GRUB_GFXPAYLOAD_LINUX=keep` to start Arch in the same resolution
+	- and of course `GRUB_COLOR_NORMAL`, `GRUB_COLOR_HIGHLIGHT`, `GRUB_BACKGROUND`, etc.
+- configure other OS's (e.g. Windows) in **/etc/grub.d/40_custom**
+	- don't forget to add `savedefault`
+- `grub-mkconfig -o /boot/grub/grub.cfg` (do this every time you alter **grub**'s configuration)
+- `grub-install /dev/sda --no-floppy`
+
+I actually had to install grub to **/dev/sdd**, which is where the hard drive I was using
+ended up when the usb key took **/dev/sda**. I think I also might have had to edit **/boot/grub/grub.cfg**
+afterward to reflect the change in device naming once I was booting off the hard drive.
+It'd be nice if my BIOS recognized the key as a removable device rather than a hard drive,
+so as not to reorder my devices, but oh well.
+To avoid this problem cropping up later, use UUIDs instead of device paths when possible,
+i.e. in places like **/etc/fstab**.
+
+
+<a name="pacman"></a>
+## Setting up the package manager:
+
+- `pacman -Sy` to update
+- edit **/etc/pacman.d/mirrorlist** and uncomment some mirrors. Some will work better / update more often than others.
+- edit **/etc/pacman.conf** and uncomment the `[multilib]` repo if you're using x86_64 and you want 32-bit packages (like *wine*).
+
+Arch's [AUR](http://aur.archlinux.org) has a bunch of community-contributed packages
+that haven't made it into the official repositories. Since this involves building packages from source,
+we need *kernel26-headers*, *gcc*, and *make*.
+
+The only thing I built manually from the AUR is *packer*, which is a wrapper for **pacman**.
+Its syntax is the same as **pacman**'s, but it also installs AUR packages.
+
+- *git*, *fakeroot*
+- download **PKGBUILD** from [AUR](http://aur.archlinux.org/packages.php?ID=33378), run `makepkg` in that dir, then `pacman -U` *`file`*
+- optionally: aur:*pacman-color*
+
+
+<a name="more"></a>
+## Some more initial system setup:
+
+- `adduser` (add to groups: `wheel,lp,audio,video,optical,network,storage,power,games`)
+- *sudo*. `visudo`, uncomment the line allowing `sudo` for all users in the `wheel` group.
+- *ntfs-3g*. add NTFS drives to **fstab** by UUID, with type `ntfs-3g` and options `defaults`
+- While we're at it, add *ntfsprogs* to manipulate NTFS partitions. I also like *gparted*.
+- *mlocate*, `updatedb` (as root) to build the database for the `locate` command.
+- Set the prompt by adding a line to **~/.bashrc** (which runs every time you open a shell).
+  E.g.: `PS1='[\u@\h \w]$ '`
+- To sync your clock with an online server:
+  *ntpd*, add `ntpd` to (and remove `hwclock` from) the DAEMONS array in **/etc/rc.conf**,
+  and add a suitable server to **/etc/ntp.conf** (my file has the line `server ca.pool.ntp.org`).
+
+
+<a name="sound"></a>
+## Sound:
+
+Install *alsa-utils*, and add `alsa` to your DAEMONS array.
+Run `alsamixer` and set the volume on the various sound controls.
+Make sure to hit `M` to unmute them if necessary.
+
+To get a microphone working, hit F4 in `alsamixer` to see capture settings,
+and enable the `Capture` control (I had three, so the first one) by moving to it and pressing space.
+The word `CAPTURE` appears when it's enabled.
+Also make sure the corresponding `Input Source` is set to the one you're using (e.g., `Front Mic`).
+
+I was often annoyed to find the sound levels going back to defaults for no apparent reason.
+Finally figured it out, though: if `alsa` is in DAEMONS, the system will save your volume levels
+on shutdown and restore them on startup.
+You can also save them manually with `alsactl store`. However, the latter command defaults to saving them
+to **/etc/asound.state**, whereas the `alsa` daemon (actually just a script) is configured to
+save to **/var/lib/alsa/asound.state**. Don't know why.
+Anyway, two different solutions:
+either run `alsactl store -f /var/lib/alsa/asound.state` to save to the spot that the `alsa` script is looking,
+or change where `alsa` looks by editing **/etc/conf.d/alsa** and removing the line
+`ALSA_ARGS="--file /var/lib/alsa/asound.state"` (or, of course, changing it to the path you want to use).
+
+
+<a name="fonts"></a>
+## Fonts:
+
+- *ttf-liberation*, *ttf-dejavu*, *ttf-freefont*, *ttf-inconsolata* for free fonts.
+- *ttf-ms-fonts* for Microsoft fonts.
+- go to **~/.fonts** and do `ln -s` *`folder`* for other font folders you might have, then run `fc-cache`
+
+
+<a name="network"></a>
+## Network:
+
+- desktop, using wired:
+	- add `eth0="dhcp"` to the networking section in **rc.conf**
+	- add `eth0` to the INTERFACES array to bring up the **eth0** interface at boot
+- desktop, alternately (e.g. using wireless):
+	- *netcfg* (note: will have to have installed *wireless-tools* from install media)
+	- add a network profile to NETWORKS array in **rc.conf**
+	- add `net-profiles` to DAEMONS
+	- netcfg will connect automatically to the specified network at boot
+- laptop:
+	- *netcfg*, *wpa_actiond*, *ifplugd*
+	- add `WIRED_INTERFACE="eth0"`, `WIRELESS_INTERFACE="wlan0"` to networking section of **rc.conf**
+	- add `net-auto-wired` and `net-auto-wireless` to rc.conf DAEMONS
+	- netcfg will connect automatically to any available wired/wireless network with a profile
+- to create a profile, copy a template from **/etc/network.d/examples** to **/etc/network.d** and change the details
+- alternately, add *wifi-select* and run `wifi-select wlan0` to connect to and/or create a profile for an available wifi network
+- to bring up a profile manually, type `netcfg` *`profile`*, or select a profile with `netcfg-menu`
+
+
+<a name="display"></a>
+## Display:
+
+I've got an Nvidia card in my desktop. Arch conveniently provides the current proprietary
+Nvidia driver in the *nvidia* package:
+
+- *nvidia*, *xorg*, *mesa*, *xf86-input-keyboard*, *xf86-input-mouse*
+- run `nvidia-xconfig` to set up an **/etc/X11/xorg.conf** file. Some options to set in the [Device] section:
+- `nologo true`, `renderaccel true`, `agpfastwrite true`, `enablepageflip true`,
+  `triplebuffer true`, `backingstore true`, `dpms true`
+- comment out: `load 'dri'`
+
+Once there's a window manager in place, you can run `nvidia-settings` (as root), set resolution/refresh rate/etc.
+and save it to **xorg.conf**.
+
+I ran into a problem with virtual terminals (tty1-6) not showing up if I try to switch to them from X.
+I added this to **/etc/modprobe/modprobe.conf** the line:
+`options nvidia NVreg_UseVBios=0` and it seemed to fix the issue.
+
+My laptop has switchable hybrid Nvidia/Intel graphics. Work on hybrid graphics in Linux is ongoing,
+so I haven't got a full solution yet. Here's what I've got so far:
+
+- *xorg*, *mesa*, *xf86-video-intel*, *xf86-input-keyboard*, *xf86-input-mouse*, *xf86-input-synaptics*
+- Since I'm not using the Nvidia driver, no **xorg.conf** needed.
+
+To do: fine-tune some of the settings in **/etc/X11/xorg.conf.d/10-synaptics.conf**.
+In particular, decrease the sensitivity of the touchpad a little. It'd be nice if I could do this
+within KDE, but whatever.
+
+
+<a name="kde"></a>
+## KDE:
+
+- *kde-meta-kdebase*, add `dbus` and `hal` to DAEMONS in **rc.conf**
+- open **/etc/inittab** and make sure the following lines are uncommented
+  (and the other lines in their respective sections ARE commented):
+	- `id:5:initdefault:`
+	- `x:5:respawn:/usr/bin/kdm -nodaemon`
+- Alternately, you could just add `kdm` to DAEMONS instead of messing with **inittab**,
+  but then you'll get dumped to a shell when you log out of X, rather than returned to the **kdm** login screen.
+- Also, copy **.xinitrc** from **/etc/skel** to **~**, add line: `exec startkde`.
+  This will allow you to boot KDE with `startx`.
+- When running GUI apps from the command line that need root privileges, remember to type `kdesu` instead of `sudo`.
+- Speaking of which, `kdesu` will by default ask for the root user's password rather than your own,
+  i.e. like running `su` instead of `sudo`. To give **sudo**-like behaviour to **kdesu**, run this command as your normal user:
+  `kwriteconfig --file kdesurc --group super-user-command --key super-user-command sudo`
+    - I'm currently getting a bug with this, where if I enter an incorrect password, the kdesu window freezes.
+      Not sure what the problem is.
+	- Another thing: for some reason this will use root's KDE system settings instead of yours;
+	  all your display settings will be reset to ugly defaults. You'd think it'd be the other way around with sudo.
+
+kde **systemsettings**, etc. (mostly trivial UI stuff):
+
+- set oxygen theme, fonts, colours, desktop effects, etc
+- *gtk-qt-engine*, aur+*oxygen-molecule-theme*
+- disable notification sounds, nepomuk, etc
+- keyboard: turn numlock on at startup
+- file associations
+- set regional info, enable keyboard layout & set compose key
+- *archlinux-themes-kdm*. `sudo systemsettings`, change login theme
+- *kde-meta-kdeplasma-addons*, add widgets
+
+Some KDE apps I have installed:
+
+- *kdegraphics-gwenview*, *kdegraphics-okular*, *kdesdk-kate*, *kdeutils-kcalc*, *ktorrent*
+- *kdeutils-ark*, *unrar*
+- *k3b*, *dvd+rw-tools*
+- *amarok*, *phonon-xine*, aur:*moodbar*. (The latter doesn't seem to work so far, though.)
+	- If scanning your collection hangs, run `amarokcollectionscanner` from the console
+      and watch the output. If it's a particular file causing the problem,
+      the scanner will freeze right before displaying that file.
+    - I'd love to be able to install aur:*moodbar*, but it's still not working in Amarok 2.
+      At least not without running it manually and having it drop little files in every folder
+      in your music collection. No, thanks.
+
+
+<a name="firefox"></a>
+## Firefox:
+
+- *firefox*, configure, add extensions, search plugins, etc.
+- *flashplugin* (this will be in the multilib repo on x86_64).
+  Go to <about:config> in Firefox and set `dom.ipc.plugins.enabled` to `true`.
+- *gecko-mediaplayer* for embedded audio and video.
+- aur:*firebrand*, run `firebrand` as root to get default icons and naming.
+
+
+<a name="printer"></a>
+## Printer:
+
+- add *cups*, *hal-cups-utils*
+- add `cups` to **rc.conf** DAEMONS
+- <http://localhost:631> to add and configure (login as root if prompted)
+- *kdeutils-printer-applet*, for an optional interface in the system tray
+
+Mine's a Samsung ML-2240. YMMV.
+
+The driver for my printer was supposed to be in the *splix* package, but it wasn't.
+The web interface did recognize my printer (through HAL, I believe) but wouldn't print,
+so I ended up downloading from Samsung's website their Unified Linux Driver,
+a 32 MB(!) tarball. Buried within the vast array of files inside I found the two I needed:
+a .ppd file (**ML-2240spl2.ppd**, which went in **/usr/share/cups/model/**) and
+a filter (**rastertosamsungspl**, which went in **/usr/lib/cups/filter/**).
+Then, after reconfiguring the printer in the web interface, it worked.
+Wish it were simpler, though.
+
+
+<a name="samba"></a>
+## Network file sharing:
+
+- *samba*, *smbclient*, *gamin*, *smb4k*
+- `cp /etc/samba/smb.conf.default /etc/samba/smb.conf`
+- add `samba` to DAEMONS in **rc.conf**
+- add user with `smbpasswd -a` *`username`*
+- **smb.conf**:
+	- Share-level security works for me.
+	- Define public sections with `public = yes`
+	- If shares have a space in the path, enclose the path in quotes rather than escaping the spaces.
+- Add entries to **fstab** on other computers corresponding to the shares:
+  `//`*`HOSTNAME`*`/`*`share /local/mount/point`* `cifs guest,rm,file_mode=0777,dir_mode=0777 0 0`
+  (for read/write access)
+
+
+<a name="lamp"></a>
+## Getting a LAMP server running:
+
+- *apache*, *mysql*, *php*, *php-apache*, *php-curl*, *phpmyadmin*, *php-mcrypt*, *php-pear*
+- start **mysql** daemon (`/etc/rc.d/mysqld start`), run `mysql_secure_installation` as root
+- add `httpd`, `mysqld` to DAEMONS
+- `cp /etc/webapps/phpmyadmin/apache.example.conf /etc/httpd/conf/extra/httpd-phpmyadmin.conf`
+- **/usr/share/webapps/phpmyadmin/.htaccess**: comment out `deny from all`
+- **/etc/http/conf/httpd.conf**:
+	- `LoadModule php5_module modules/libphp5.so`
+	- `Include conf/extra/php5_module.conf`
+	- `Include conf/extra/httpd-phpmyadmin.conf`
+	- set DocumentRoot & Directory
+	- `Action application/x-httpd-php5 "php"`
+- **/etc/php/php.ini**:
+	- `open_basedir`: add document root, `/usr/share/webapps/`, `/etc/webapps/`
+	- uncomment extensions: `curl.so`, `json.so`, `mysql.so`, `mcrypt.so`
+	- uncomment `date.timezone`, add timezone (e.g. `America/Montreal`)
+- add mysql user & database:
+	- `mysql -u root -p`
+	- `create database` *`dbname`*`;`
+	- `grant SELECT,INSERT,DELETE,UPDATE,CREATE,ALTER,INDEX,DROP on` *`dbname`*`.* to` *`username`*`@localhost;`
+	- `set password for` *`username`*`@localhost= password('`*`password`*`');`
+	- OR, do it all from the Privileges tab in **phpMyAdmin** (<http://localhost/phpmyadmin/>).
+
+
+<a name="ssh"></a>
+## SSH server:
+
+- *openssh*, add `sshd` to DAEMONS
+- edit **/etc/hosts.allow**, add the line: `sshd: ALL` (or instead of `ALL`, an IP address or range).
+By default this file is empty and **/etc/hosts.deny** contains `ALL: ALL`, so login attempts won't get through.
+- edit **/etc/ssh/sshd_config**. Options to consider:
+	- `AllowUsers` *`user1 user2`*: whitelist certain users.
+	- `PermitRootLogin`: self-explanatory.
+	- `Port`: something other than 22, to make it a little harder to find.
+	- `Banner`: change it to something like **/etc/issue** to add a welcome message.
+- And of course to log in to an SSH server, type `ssh -p` *`port user`*`@`*`address`*, or just
+`ssh` *`address`* if you have the same username and left the port at 22.
+
+To copy a file over SSH, use `scp` basically as you would `cp`, but prefix the remote file path with *`hostname`*`:`.
+Example: `cp -r /mnt/data/projects zoyd:/home/saltire/`
+to copy (recursively) a local directory to a home directory on the remote computer `zoyd`.
+
+Unrelated to Arch but if you have a router, maybe set up a port forwarding rule for your SSH port,
+so you can log in from remote locations.
+
+Interesting bits on the Arch wiki about stuff like mounting remote filesystems with SSHFS,
+or using a remote SSH tunnel to turn your home computer into a proxy,
+for surfing on your laptop on unsecured wireless connections.
+Like everything on this page, I'll post it once I actually try it.
+
+Here's something I did try: X11 forwarding. Edit **/etc/ssh/sshd_config** on the remote server
+(and restart **sshd** after):
+
+- `AllowTcpForwarding yes`
+- `X11Forwarding yes`
+- `X11DisplayOffset 10`
+- `X11UseLocalhost yes`
+
+Also make this change to **/etc/ssh/ssh_config** on the local client:
+
+- `ForwardX11 yes`
+
+You can then start a session with `ssh -X` *`hostname`*. Try running an X app on the remote machine.
+
+
+<a name="virtualbox"></a>
+## Virtualbox:
+
+- *virtualbox*
+- `gpasswd -a `*`username`*` vboxusers`
+- `modprobe vboxdrv` (and/or add it to MODULES in **rc.conf**)
+- `modprobe vboxnetflt` if you want to use bridged networking (as above)
+- `/etc/rc.d/vboxdrv setup` (to recompile the kernel module, i.e. after kernel updates)
+- configure a VM, install an OS, install guest additions
+- add shared folders, mount from `\\vboxsrv\`*`share`*
+
+I'm also experimenting with virtualization using KVM and Qemu. Will post when I get around to it.
+
+
+<a name="other"></a>
+## Other packages:
+
+- *rsyslog*, replace syslog-ng with `rsyslogd` in DAEMONS
+- *unrar*, aur:*rar*, *p7zip*
+- *vlc*, *libdvdcss*
+- *comix*, *dosbox*, *filelight*, *gimp*, *inkscape*
+- *pidgin*, *skype*, *nicotine*
+- *wine*, possibly aur:*wine_gecko*
+- *grsync* is a nice frontend to *rsync*.
+- *jre*, possibly *jdk*
+
+
+<a name="lirc"></a>
+## Remote control:
+
+Still in the works. I have a Windows MCE remote.
+
+- *lirc*, *kdeutils-kremotecontrol*
+- `modprobe lirc_mceusb` ...possibly add `lirc_mceusb` to MODULES in **rc.conf**
+- `cp /usr/share/remotes/mceusb/lircd.conf.mceusb /etc/lirc/lircd.conf`
+- `/etc/rc.d/lircd start`, or of course add `lircd` to DAEMONS in **rc.conf**
+- `irw` to test if your system is detecting infrared signals
+
+
+<a name="todo"></a>
+## TODO:
+
+- get lirc working
+- still haven't figured out how to get **packer** to consistently display **PKGBUILD** files with
+  an editor other than **vi**. Call me new-school but I fucking can't stand **vi**.
+- describe how to use pacman to sync packages from another machine rather than from online repos
+- get suspend and resume working (kind of a big one that I haven't had the patience to tackle yet)
+- and of course see what I can do about switchable graphics on the laptop.

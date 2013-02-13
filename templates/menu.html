@@ -1,0 +1,25 @@
+<html>
+	<head>
+		<title>articles :: saltire sable industries</title>
+		<link rel="stylesheet" href="/style.css" />
+		<link rel="stylesheet" href="articles.css" />
+		{% include "elements/ga.html" %}
+	</head>
+	<body class="pic">
+		<div id="top">
+			<div class="backg"></div>
+			<a class="leftlink" href="/articles">articles</a>
+			<a class="rightlink" href="/"><img src="/saltiresable-small.png" alt="saltire sable." /></a>
+		</div>
+		<h1 class="center">articles.</h1>
+		<div class="menubox">
+			<div class="backg"></div>
+			{% foreach children %}
+			<a href="@uri">
+				<span class="atitle">{{ title }}</span>
+				{{ summary }}
+			</a>
+			{% endforeach %}
+		</div>
+	</body>
+</html>

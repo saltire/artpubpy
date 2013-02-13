@@ -1,0 +1,13 @@
+.textbox { width: 700px; margin: 20px auto; padding: 25px 40px; border: 1px dotted #f1f1da;
+		color: #F4F4DA; font-size: 16px; line-height: 1.4em; position: relative; }
+.textbox .backg { opacity: 0.9; }
+.textbox h1 { margin: 10px 0; background: #000; color: #EEEEB0; font-size: 40px; line-height: 1.4em; }
+.textbox h2 { margin: 30px 0 20px; }
+.textbox p { margin: 10px 0; }
+.textbox ul { margin: 10px 0; }
+.textbox a { background: #000; color: #99DBDB; text-decoration: none; }
+.textbox a:hover { background: #5B5B56; }
+.textbox code { color: #7A997A; font-size: 14px; }
+.textbox em { color: #E8A2A2; font-style: normal; }
+.textbox em code { color: #F4F4B7; }
+.textbox strong { color: #E8BF96; font-weight: normal; }

@@ -1,0 +1,121 @@
+title: Learning C#
+-
+content:
+# Learning C#
+
+I'm attempting to pitch in on a game that a couple of guys I know are writing.
+It's written in *C#* using Microsoft's *XNA Framework*, so this means I have to learn C#,
+a language I've looked at a couple times but never really used before.
+Syntactically it's a lot like Java, and in Microsoft style,
+it has a few extended features and other little differences thrown in.
+
+Here are a few new things I'm learning as I get up to speed on C#.
+
+## Style conventions
+
+In languages with braces, I generally place the opening brace at the end of the line that opens it:
+
+    method(args) {
+        // code
+    }
+
+The code blocks in all the C# code I've seen so far put all their braces on separate lines, like so:
+
+    method(args)
+    {
+        // code
+    }
+
+Basically just gives you more whitespace, so sure, whatever.
+
+## Delegates and events
+
+*Delegates* are a way to reference an arbitrary method, with the method being assigned at runtime.
+A delegate is a type. It is declared using a particular method signature and return type:
+
+    public delegate void Delegate(int arg1, int arg2);
+
+It is later instantiated and assigned a method for it to reference.
+The method has to have the same signature and return type.
+It can be a static method or it can belong to an instanced object,
+in which case the delegate will reference the method in the context of that particular instance.
+
+    public static void Method(int arg1, int arg2)
+    {
+        // do something
+    }
+
+    Delegate del = new Delegate(Method);
+    Delegate del = Method; // shortcut for the above
+
+This way, when your code calls a delegate, it doesn't have to know which exact method it's calling.
+
+    del(1, 2); // this will actually call Method(1, 2)
+
+The method can also be an anonymous method, aka lambda function.
+For some reason these are declared using the `delegate` keyword:
+
+    Delegate del = delegate(int arg1, int arg2)
+    {
+        // do something
+    }
+
+You can also create composite delegates, which are composed of one or more other delegates.
+When you call a composite delegate, all of the delegates composing it are called.
+Delegates are added and removed using the `+` and `-` operators.
+
+    Delegate comp;
+    comp += new Delegate(Method);
+    comp += new Delegate(OtherMethod);
+
+By corollary, I think it's also acceptable to write the above like this:
+
+    Delegate comp = Method + OtherMethod;
+
+*Events* are like composite delegates.
+They are declared like a field with the `event` keyword and a delegate type:
+
+    public delegate void EventHandler(object sender, EventArgs e);
+
+    public event EventHandler Event;
+
+Methods are subscribed to the event using `+` and `-`:
+
+    Event += new EventHandler(SomeMethod);
+    Event += SomeOtherMethod; // again, syntactic sugar
+
+The event is invoked by calling it like a function:
+
+    Event(this, e);
+
+This of course will call both `SomeMethod(this, e)` and `SomeOtherMethod(this, e)`,
+presumably in the order in which they were added to the event.
+
+
+# The XNA Framework
+
+I also have to learn the specifics of the Microsoft's XNA Framework.
+Having never developed a real game before, there were some fundamental concepts
+that I'd heard of before, but the specifics of which were pretty new to me.
+
+## The content pipeline
+
+The assets (textures, meshes, sounds, data) in a game aren't usually stored in their original formats.
+You don't usually see folders full of, say, .png files; just like the code itself,
+they're compiled into an intermediate format that the game can use directly.
+This way no overhead is incurred decoding whatever format was used to create the content, and
+the game will run a lot faster. This process happens at compile time using a *content pipeline*.
+
+Basically this is just a series of steps to import content files and process them into objects
+that the game can use. The code to do this exists outside of the actual game code,
+since it's only used when the game is built and isn't needed in the final product.
+
+The XNA framework includes a bunch of libraries to import and process common file formats,
+like images, sounds, sprite fonts, XML files, and other stuff like DirectX content.
+It's also possible to extend these libraries to import and process asset formats of your own.
+To create a custom importer, you can extend the `ContentImporter` class,
+add an *attribute* specifying the extension of the file type(s) that the importer will handle,
+and override the `Import` method.
+This method receives the filename and a bit of logging context as arguments, and should return
+a type that can be used by one of the available processors.
+Similarly, you can create a custom processor
