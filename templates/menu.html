@@ -14,12 +14,12 @@
 		<h1 class="center">articles.</h1>
 		<div class="menubox">
 			<div class="backg"></div>
-			{% foreach children %}
+			{% for child in children %}
 			<a href="@uri">
-				<span class="atitle">{{ title }}</span>
-				{{ summary }}
+				<span class="atitle">{{ child.title }}</span>
+				{{ child.summary }}
 			</a>
-			{% endforeach %}
+			{% endfor %}
 		</div>
 	</body>
 </html>
