@@ -1,8 +1,8 @@
 <html>
 	<head>
 		<title>{{ title }}</title>
-		<link rel="stylesheet" href="static/style.css" />
-		<link rel="stylesheet" href="static/articles.css" />
+		<link rel="stylesheet" href="{{ root }}static/style.css" />
+		<link rel="stylesheet" href="{{ root }}static/articles.css" />
 		{% if summary %}<meta name="description" content="{{ summary }}" />{% endif %}
 		{% if tags %}<meta name="keywords" content="{{ tags }}" />{% endif %}
 		{% include "elements/ga.html" %}

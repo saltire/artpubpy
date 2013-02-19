@@ -1,8 +1,8 @@
 <html>
 	<head>
 		<title>articles :: saltire sable industries</title>
-		<link rel="stylesheet" href="/style.css" />
-		<link rel="stylesheet" href="articles.css" />
+		<link rel="stylesheet" href="static/style.css" />
+		<link rel="stylesheet" href="static/articles.css" />
 		{% include "elements/ga.html" %}
 	</head>
 	<body class="pic">
@@ -14,10 +14,10 @@
 		<h1 class="center">articles.</h1>
 		<div class="menubox">
 			<div class="backg"></div>
-			{% for child in children %}
-			<a href="@uri">
-				<span class="atitle">{{ child.title }}</span>
-				{{ child.summary }}
+			{% for article in articles %}
+			<a href="articles/{{ article.route }}">
+				<span class="atitle">{{ article.title }}</span>
+				{{ article.summary }}
 			</a>
 			{% endfor %}
 		</div>

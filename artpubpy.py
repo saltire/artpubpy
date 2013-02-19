@@ -1,36 +1,37 @@
 import os
-import re
 
-from flask import Flask, render_template, url_for
+from flask import Flask, redirect, render_template, url_for
 
-import markdown
-
-from filetree import FileTree
+from tree import ArticleTree
 
 
 app = Flask(__name__)
 
-content_path = './content'
-template_path = './templates'
+CONTENT_PATH = './content'
+TEMPLATE_PATH = './templates'
+
+tree = ArticleTree(CONTENT_PATH)
+
+
+@app.route('/')
+def menu():
+    return render_template('menu.html', articles=tree.routes[''].children)
 
 
 @app.route('/articles/')
 @app.route('/articles/<path:route>')
 def article(route=''):
-    filetree = FileTree(content_path)
-    
-    for route in filetree.routes:
-        print route
+    route = route.rstrip('/')
     
     try:
-        article = filetree.routes[route]
-    except IndexError:
-        return 'Not Found'
+        article = tree.routes[route]
+    except KeyError:
+        return redirect(url_for('menu'))
     
-    tfile = (entry for entry in sorted(os.listdir(template_path))
-             if os.path.splitext(entry)[0] == article.template)
+    tfile = next(entry for entry in sorted(os.listdir(TEMPLATE_PATH))
+                 if os.path.splitext(entry)[0] == article.get_template())
     
-    return render_template(tfile, **article.get_content_vars())
+    return render_template(tfile, root=url_for('menu'), **vars(article))
     
 #    path = content_path
 #    for slug in route.split('/'):
