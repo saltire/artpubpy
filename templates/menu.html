@@ -15,7 +15,7 @@
 		<div class="menubox">
 			<div class="backg"></div>
 			{% for article in articles %}
-			<a href="articles/{{ article.route }}">
+			<a href="{{ root }}{{ article.route }}">
 				<span class="atitle">{{ article.title }}</span>
 				{{ article.summary }}
 			</a>

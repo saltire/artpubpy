@@ -7,31 +7,35 @@ from tree import ArticleTree
 
 app = Flask(__name__)
 
-CONTENT_PATH = './content'
-TEMPLATE_PATH = './templates'
+CONTENT_PATH = './content/'
+TEMPLATE_PATH = './templates/'
 
 tree = ArticleTree(CONTENT_PATH)
 
 
 @app.route('/')
 def menu():
-    return render_template('menu.html', articles=tree.routes[''].children)
-
-
-@app.route('/articles/')
-@app.route('/articles/<path:route>')
+    return render_template('menu.html', root=url_for('menu', _external=True),
+                           articles=tree.get_child_articles(''))
+    
+    
+@app.route('/<path:route>')
 def article(route=''):
     route = route.rstrip('/')
     
-    try:
-        article = tree.routes[route]
-    except KeyError:
+    print 'Trying route:', route,
+    
+    article = tree.get_article(route)
+    if article is None:
         return redirect(url_for('menu'))
+    
+    print article.children
     
     tfile = next(entry for entry in sorted(os.listdir(TEMPLATE_PATH))
                  if os.path.splitext(entry)[0] == article.get_template())
     
-    return render_template(tfile, root=url_for('menu'), **vars(article))
+    return render_template(tfile, root=url_for('article', route='', _external=True),
+                           **vars(article))
     
 #    path = content_path
 #    for slug in route.split('/'):
